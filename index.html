@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GroSplit</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <h1>GroSplit - Shared Grocery Splitter</h1>
+        <!-- Total Amount Input -->
+        <div>
+            <label>Total Bill Amount: </label>
+            <input type="number" id="totalAmount" placeholder="Enter total bill" required oninput="updateRemainingAmount()">
+        </div>
+
+        <!-- Remaining Amount Display -->
+        <div id="remainingAmountContainer">
+            <p>Remaining Amount to be allocated: €<span id="remainingAmount">0.00</span></p>
+        </div>
+
+        <!-- Add Item Section -->
+        <h2>Add Items</h2>
+        <div id="itemSection">
+            <input type="text" id="itemName" placeholder="Item Name">
+            <input type="number" id="itemPrice" placeholder="Price" oninput="updateRemainingAmount()">
+            <div>
+                <label><input type="checkbox" id="selectAll" onclick="selectAllParticipants()"> Select All</label>
+                <br><br>
+                <label><input type="checkbox" value="Ruturaj" class="participant"> Ruturaj</label>
+                <label><input type="checkbox" value="Rushabh" class="participant"> Rushabh</label>
+                <label><input type="checkbox" value="Neeraj" class="participant"> Neeraj</label>
+                <label><input type="checkbox" value="Ramakant" class="participant"> Ramakant</label>
+                <label><input type="checkbox" value="Aniket" class="participant"> Aniket</label>
+                <label><input type="checkbox" value="Pranav" class="participant"> Pranav</label>
+                <!-- Add more participants if needed -->
+            </div>
+            <button onclick="addItem()">Add Item</button>
+        </div>
+
+        <!-- Display Items List -->
+        <h2>Items Added</h2>
+        <ul id="itemsList"></ul>
+
+        <!-- Calculate Button -->
+        <button onclick="calculateSplit()">Calculate Split</button>
+
+        <!-- Result Section -->
+        <h2>Contribution Per Person</h2>
+        <ul id="resultList"></ul>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
