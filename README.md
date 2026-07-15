@@ -15,4 +15,5 @@ GroSplit is a simple web app for managing shared grocery expenses in a shared ap
    ```bash
    git clone https://github.com/RuturajKotwal/GroSplit.git
 
+   ```
 2. **Open index.html in a browser to get started.**
