@@ -140,10 +140,14 @@ function simplifyDebts(balances = {}) {
   }
 
   // Sort debtors descending by debt amount (largest debt first), break ties alphabetically
-  debtors.sort((a, b) => b.amount - a.amount || a.member.localeCompare(b.member));
+  debtors.sort(
+    (a, b) => b.amount - a.amount || a.member.localeCompare(b.member)
+  );
 
   // Sort creditors descending by credit amount (largest credit first), break ties alphabetically
-  creditors.sort((a, b) => b.amount - a.amount || a.member.localeCompare(b.member));
+  creditors.sort(
+    (a, b) => b.amount - a.amount || a.member.localeCompare(b.member)
+  );
 
   const transactions = [];
   let d = 0;

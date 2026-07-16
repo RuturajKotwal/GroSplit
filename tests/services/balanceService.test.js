@@ -224,7 +224,10 @@ describe('balanceService', () => {
       ]);
 
       // Verification: Total transferred must equal total positive balances
-      const totalTransferred = transactions.reduce((sum, t) => sum + t.amount, 0);
+      const totalTransferred = transactions.reduce(
+        (sum, t) => sum + t.amount,
+        0
+      );
       expect(totalTransferred).toBe(7000);
     });
 
