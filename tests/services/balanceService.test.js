@@ -178,6 +178,21 @@ describe('balanceService', () => {
         David: -500,
       });
     });
+
+    it('should safely skip malformed or non-positive expenses and settlements', () => {
+      const expenses = [
+        { paidBy: '', amount: 1000 }, // Missing paidBy
+        { paidBy: 'Alice', amount: 0 }, // Invalid amount
+        { paidBy: 'Alice', amount: 1000, splitBetween: [] }, // Empty participants when members is empty
+      ];
+      const settlements = [
+        { from: '', to: 'Alice', amount: 500 }, // Missing from
+        { from: 'Bob', to: 'Alice', amount: -100 }, // Invalid amount
+      ];
+
+      const balances = calculateBalances(expenses, settlements, []);
+      expect(balances).toEqual({ Alice: 0 });
+    });
   });
 
   describe('simplifyDebts', () => {

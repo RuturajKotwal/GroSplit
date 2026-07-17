@@ -7,6 +7,7 @@
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "test": "jest --runInBand",
+    "test:coverage": "jest --coverage --runInBand",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
