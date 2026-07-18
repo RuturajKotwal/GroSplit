@@ -1,4 +1,6 @@
-const API_BASE = 'http://localhost:5000/groups';
+// const API_BASE = 'http://localhost:5000/groups';
+
+const API_BASE = 'https://grosplit.onrender.com/groups';
 
 let currentGroup = null;
 

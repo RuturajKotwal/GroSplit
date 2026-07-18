@@ -4,17 +4,26 @@
 
 ---
 
+## 🌐 Production Deployment
+
+- **Live Production API**: `https://grosplit.onrender.com`
+- **Health Check**: `https://grosplit.onrender.com/health`
+- **Frontend Target API**: `https://grosplit.onrender.com/groups`
+
+---
+
 ## 📖 Background & Evolution (The "Before / After" Story)
 
 * **Before**: GroSplit started as a single-bill static HTML/JS page created during Master's shared housing to split one-off grocery bills. It relied solely on in-memory browser state, had no database persistence, supported only single bills, and offered no debt simplification.
-* **After**: Rebuilt into a multi-bill, persistent REST API powered by Node.js, Express, MongoDB (Mongoose), containerized with Docker & Docker Compose, thoroughly unit & integration tested with Jest (achieving **>94% statement coverage**), and automated via GitHub Actions CI.
+* **After**: Rebuilt into a multi-bill, persistent REST API powered by Node.js, Express, MongoDB (Mongoose), containerized with Docker & Docker Compose, thoroughly unit & integration tested with Jest (achieving **>94% statement coverage**), deployed on cloud infrastructure (Render & MongoDB Atlas), and automated via GitHub Actions CI.
 
 ---
 
 ## 🛠️ Tech Stack
 
 * **Backend Framework**: Node.js, Express
-* **Database & ODM**: MongoDB, Mongoose
+* **Database & ODM**: MongoDB, Mongoose (MongoDB Atlas)
+* **Cloud Deployment**: Render
 * **Testing & Coverage**: Jest, Supertest, `mongodb-memory-server`
 * **Containerization**: Docker, Docker Compose
 * **CI/CD**: GitHub Actions
@@ -64,6 +73,7 @@ Copy `.env.example` to `.env` to configure local settings:
 | :--- | :--- | :--- |
 | `PORT` | `5000` | Port for the Express API server |
 | `MONGODB_URI` | `mongodb://localhost:27017/grosplit` | MongoDB database connection URI |
+| `MONGO_URI` | `mongodb://localhost:27017/grosplit` | Fallback MongoDB database URI |
 
 ---
 
