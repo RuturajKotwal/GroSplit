@@ -21,39 +21,55 @@ body {
   background-color: #ffffff;
   border-radius: 8px;
   box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
-  max-width: 75%;
+  max-width: 800px;
   width: 100%;
   padding: 24px;
   margin: 20px;
+}
+
+/* Card Section */
+.card {
+  background-color: #ffffff;
+  border: 1px solid #e0e4e8;
+  border-radius: 8px;
+  padding: 18px;
+  margin-bottom: 20px;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.04);
 }
 
 /* Headings */
 h1 {
   color: #1a73e8;
   font-weight: bold;
-  margin-bottom: 16px;
+  margin-bottom: 20px;
+  text-align: center;
 }
 
 h2 {
   color: #333;
   font-weight: 600;
-  margin-top: 16px;
+  margin-top: 0;
   margin-bottom: 12px;
+  font-size: 1.2rem;
+  border-bottom: 2px solid #1a73e8;
+  padding-bottom: 4px;
+  display: inline-block;
 }
 
 /* Labels and Text */
 label {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   color: #555;
   font-weight: 500;
 }
 
-/* Input Fields */
+/* Input Fields & Selects */
 input[type='text'],
-input[type='number'] {
+input[type='number'],
+select {
   width: calc(100% - 20px);
   padding: 8px 10px;
-  margin: 8px 0;
+  margin: 6px 0 12px 0;
   border: 1px solid #d0d4d9;
   border-radius: 6px;
   font-size: 1rem;
@@ -63,7 +79,8 @@ input[type='number'] {
 }
 
 input[type='text']:focus,
-input[type='number']:focus {
+input[type='number']:focus,
+select:focus {
   border-color: #1a73e8;
   outline: none;
   background-color: #ffffff;
@@ -79,7 +96,7 @@ button {
   padding: 10px 20px;
   font-size: 1rem;
   font-weight: bold;
-  margin-top: 10px;
+  margin-top: 6px;
   cursor: pointer;
   transition:
     background-color 0.3s,
@@ -94,7 +111,7 @@ button:hover {
 /* Checkbox Styling */
 input[type='checkbox'] {
   accent-color: #1a73e8;
-  transform: scale(1.2);
+  transform: scale(1.1);
   margin-right: 6px;
 }
 
@@ -102,12 +119,13 @@ input[type='checkbox'] {
 ul {
   list-style: none;
   padding: 0;
-  margin: 16px 0;
+  margin: 12px 0;
 }
 
 #itemsList li,
-#resultList li {
-  font-size: 1rem;
+#resultList li,
+#suggestedSettlementsList li {
+  font-size: 0.95rem;
   padding: 10px 14px;
   margin-bottom: 8px;
   background-color: #f1f3f4;
@@ -116,18 +134,15 @@ ul {
   color: #333;
 }
 
-/* Remaining Amount Display */
-#remainingAmountContainer {
+code {
   background-color: #e8f0fe;
-  padding: 10px;
-  border-radius: 6px;
-  margin: 16px 0;
-  font-size: 1.1rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: monospace;
   color: #1a73e8;
-  font-weight: bold;
 }
 
-/* Responsive Design for Small Screens */
+/* Responsive Design */
 @media (max-width: 480px) {
   #app {
     padding: 16px;

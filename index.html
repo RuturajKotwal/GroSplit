@@ -3,84 +3,83 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GroSplit</title>
+    <title>GroSplit - Expense Splitter</title>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="app">
-      <h1>GroSplit - Shared Grocery Splitter</h1>
-      <!-- Total Amount Input -->
-      <div>
-        <label>Total Bill Amount: </label>
-        <input
-          type="number"
-          id="totalAmount"
-          placeholder="Enter total bill"
-          required
-          oninput="updateRemainingAmount()"
-        />
+      <h1>GroSplit - Shared Expense Splitter</h1>
+
+      <!-- Active Group Info & Selection -->
+      <div id="groupHeaderSection" class="card">
+        <h2>Active Group: <span id="groupNameDisplay">Loading...</span></h2>
+        <p>Group ID: <code id="groupIdDisplay">-</code></p>
+        <div id="groupMembersList">
+          <strong>Members:</strong> <span id="membersDisplay">-</span>
+        </div>
       </div>
 
-      <!-- Remaining Amount Display -->
-      <div id="remainingAmountContainer">
-        <p>
-          Remaining Amount to be allocated: €<span id="remainingAmount"
-            >0.00</span
-          >
-        </p>
-      </div>
-
-      <!-- Add Item Section -->
-      <h2>Add Items</h2>
-      <div id="itemSection">
-        <input type="text" id="itemName" placeholder="Item Name" />
-        <input
-          type="number"
-          id="itemPrice"
-          placeholder="Price"
-          oninput="updateRemainingAmount()"
-        />
+      <!-- Add Expense Section -->
+      <div id="itemSection" class="card">
+        <h2>Add Expense</h2>
         <div>
-          <label
-            ><input
+          <label for="payerSelect">Paid By:</label>
+          <select id="payerSelect">
+            <option value="">Select Payer</option>
+          </select>
+        </div>
+        <br />
+        <input type="text" id="itemName" placeholder="Description / Item Name" />
+        <input type="number" id="itemPrice" step="0.01" placeholder="Amount (€)" />
+        <div>
+          <br />
+          <label>
+            <input
               type="checkbox"
               id="selectAll"
               onclick="selectAllParticipants()"
             />
-            Select All</label
-          >
+            Select All Participants
+          </label>
           <br /><br />
-          <label
-            ><input type="checkbox" value="Ruturaj" class="participant" />
-            Ruturaj</label
-          >
-          <label
-            ><input type="checkbox" value="Ramakant" class="participant" />
-            Ramakant</label
-          >
-          <label
-            ><input type="checkbox" value="Aniket" class="participant" />
-            Aniket</label
-          >
-          <label
-            ><input type="checkbox" value="Advait" class="participant" />
-            Advait</label
-          >
-          <!-- Add more participants if needed -->
+          <div id="participantsCheckboxContainer"></div>
         </div>
-        <button onclick="addItem()">Add Item</button>
+        <br />
+        <button onclick="addExpense()">Add Expense</button>
       </div>
 
-      <!-- Display Items List -->
-      <h2>Items Added</h2>
-      <ul id="itemsList"></ul>
+      <!-- Display Expenses List -->
+      <div class="card">
+        <h2>Expenses Added</h2>
+        <ul id="itemsList"></ul>
+      </div>
 
-      <!-- Calculate Button -->
-      <button onclick="calculateSplit()">Calculate Split</button>
+      <!-- Calculate Balances & Debt Simplification Button -->
+      <div class="card">
+        <button onclick="calculateSplit()">Calculate Balances & Simplified Debts</button>
+      </div>
 
       <!-- Result Section -->
-      <h2>Contribution Per Person</h2>
-      <ul id="resultList"></ul>
+      <div class="card">
+        <h2>Net Balances Per Person</h2>
+        <ul id="resultList"></ul>
+
+        <h2>Suggested Debt Settlements</h2>
+        <ul id="suggestedSettlementsList"></ul>
+      </div>
+
+      <!-- Record Settlement Section -->
+      <div class="card">
+        <h2>Record a Repayment</h2>
+        <div>
+          <label for="settlementFrom">From (Payer):</label>
+          <select id="settlementFrom"></select>
+          <label for="settlementTo">To (Recipient):</label>
+          <select id="settlementTo"></select>
+          <input type="number" id="settlementAmount" step="0.01" placeholder="Amount (€)" />
+          <button onclick="recordSettlement()">Record Repayment</button>
+        </div>
+      </div>
     </div>
 
     <script src="script.js"></script>
