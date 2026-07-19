@@ -13,7 +13,31 @@ const {
   validateCreateSettlement,
 } = require('../middleware/validate');
 
+const mongoose = require('mongoose');
+
 const router = express.Router();
+
+// Middleware to ensure database connection before processing group requests
+router.use(async (req, res, next) => {
+  if (mongoose.connection.readyState !== 1) {
+    const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
+    if (MONGO_URI) {
+      try {
+        await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
+      } catch (err) {
+        return res.status(500).json({
+          error: `Database connection failed: ${err.message}`,
+        });
+      }
+    } else {
+      return res.status(500).json({
+        error:
+          'Database connection failed: Neither MONGO_URI nor MONGODB_URI environment variable is configured.',
+      });
+    }
+  }
+  next();
+});
 
 // POST /groups - Create a new group
 router.post('/', validateCreateGroup, async (req, res, next) => {
