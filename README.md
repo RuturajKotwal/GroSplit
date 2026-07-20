@@ -1,98 +1,98 @@
 # GroSplit — Shared Expense Splitter API
 
-> A defensible, production-grade Node.js / Express backend service for tracking multi-bill group expenses, calculating exact zero-sum net balances, and generating minimal debt simplification settlements.
+GroSplit is a Node.js / Express backend service for tracking multi-bill group expenses, calculating exact zero-sum net balances, and generating minimal debt settlement transactions.
+
+## Deployments
+
+- **Frontend Client**: [https://ruturajkotwal.github.io/GroSplit/](https://ruturajkotwal.github.io/GroSplit/)
+- **Production API**: [https://grosplit.onrender.com](https://grosplit.onrender.com)
+- **Health Check**: [https://grosplit.onrender.com/health](https://grosplit.onrender.com/health)
 
 ---
 
-## 🌐 Production Deployment
+## Technical Overview
 
-- **Live Production API**: `https://grosplit.onrender.com`
-- **Health Check**: `https://grosplit.onrender.com/health`
-- **Frontend Target API**: `https://grosplit.onrender.com/groups`
+GroSplit evolved from a single-bill static in-browser calculation script into a multi-tenant REST API with cloud database persistence, Docker containerization, unit/integration testing, and automated CI.
 
----
-
-## 📖 Background & Evolution (The "Before / After" Story)
-
-* **Before**: GroSplit started as a single-bill static HTML/JS page created during Master's shared housing to split one-off grocery bills. It relied solely on in-memory browser state, had no database persistence, supported only single bills, and offered no debt simplification.
-* **After**: Rebuilt into a multi-bill, persistent REST API powered by Node.js, Express, MongoDB (Mongoose), containerized with Docker & Docker Compose, thoroughly unit & integration tested with Jest (achieving **>94% statement coverage**), deployed on cloud infrastructure (Render & MongoDB Atlas), and automated via GitHub Actions CI.
+Key technical specifications:
+- **Integer Cents Precision**: All monetary values are handled in integer cents to eliminate floating-point rounding errors.
+- **Deterministic Cent Allocation**: Remainder cents from non-even splits are assigned deterministically (alphabetically) to guarantee zero-sum group balance invariants.
+- **Minimal Debt Graph Reduction**: Implements a greedy debt simplification algorithm to reduce $N$-person settlement transactions to at most $N-1$.
 
 ---
 
-## 🛠️ Tech Stack
+## Architecture & Tech Stack
 
-* **Backend Framework**: Node.js, Express
-* **Database & ODM**: MongoDB, Mongoose (MongoDB Atlas)
-* **Cloud Deployment**: Render
-* **Testing & Coverage**: Jest, Supertest, `mongodb-memory-server`
-* **Containerization**: Docker, Docker Compose
-* **CI/CD**: GitHub Actions
-* **Frontend Client**: Vanilla HTML5, CSS3, JavaScript (Fetch API integration)
+- **Runtime & Server**: Node.js 20, Express
+- **Database & ODM**: MongoDB, Mongoose (MongoDB Atlas)
+- **Testing**: Jest, Supertest, `mongodb-memory-server`
+- **Containerization**: Docker, Docker Compose
+- **CI/CD**: GitHub Actions
+- **Client**: Vanilla HTML5, CSS3, JavaScript (Fetch API)
 
 ---
 
-## 🚀 Quickstart Guide
+## Setup & Execution
 
-### Option 1: Running with Docker Compose (Recommended)
+### Prerequisites
+- Node.js 20+
+- MongoDB (or Docker Desktop)
 
-Requires Docker Desktop installed.
+### Option 1: Docker Compose
 
 ```bash
-# 1. Clone the repository
+# Clone the repository
 git clone https://github.com/RuturajKotwal/GroSplit.git
 cd GroSplit
 
-# 2. Start the full stack (Express API + MongoDB with persistent storage)
+# Start Express API and MongoDB services
 docker-compose up --build
 ```
-The Express API will be live at `http://localhost:5000`.
+The API listens at `http://localhost:5000`.
 
-### Option 2: Running Locally with Node.js & MongoDB
+### Option 2: Local Node.js Setup
 
 ```bash
-# 1. Install dependencies
+# Install dependencies
 npm install
 
-# 2. Configure environment variables (create .env file)
+# Copy environment template
 cp .env.example .env
 
-# 3. Start development server
+# Run development server
 npm run dev
-
-# Or start production server
-npm start
 ```
 
 ---
 
-## ⚙️ Environment Variables
+## Environment Configuration
 
-Copy `.env.example` to `.env` to configure local settings:
+Copy `.env.example` to `.env` to configure server properties:
 
-| Variable | Default Value | Description |
+| Variable | Default | Description |
 | :--- | :--- | :--- |
-| `PORT` | `5000` | Port for the Express API server |
-| `MONGODB_URI` | `mongodb://localhost:27017/grosplit` | MongoDB database connection URI |
-| `MONGO_URI` | `mongodb://localhost:27017/grosplit` | Fallback MongoDB database URI |
+| `PORT` | `5000` | HTTP server port |
+| `MONGODB_URI` | `mongodb://localhost:27017/grosplit` | Primary MongoDB connection URI |
+| `MONGO_URI` | `mongodb://localhost:27017/grosplit` | Secondary fallback MongoDB connection URI |
 
 ---
 
-## 📑 API Endpoints Reference
+## API Specification
 
-All request/response payloads use JSON format. All monetary `amount` values are integers representing **cents** to prevent float precision errors (e.g. `2000` = €20.00).
+All request and response bodies use JSON. Monetary amounts are integer cents (e.g., `2000` = €20.00).
 
-| Method | Endpoint | Description | Status Code |
+| Method | Endpoint | Description | Status |
 | :--- | :--- | :--- | :--- |
-| `GET` | `/health` | Server health check endpoint | `200 OK` |
-| `POST` | `/groups` | Create a new group | `201 Created` |
-| `GET` | `/groups/:id` | Fetch group details by ID | `200 OK` / `404` |
-| `POST` | `/groups/:id/expenses` | Record a new expense | `201 Created` / `400` |
-| `GET` | `/groups/:id/expenses` | List all expenses for a group | `200 OK` / `404` |
-| `GET` | `/groups/:id/balances` | Calculate net balances per member | `200 OK` / `404` |
-| `GET` | `/groups/:id/settlements/suggested` | Calculate simplified debt settlements | `200 OK` / `404` |
-| `POST` | `/groups/:id/settlements` | Record a repayment settlement | `201 Created` / `400` |
+| `GET` | `/health` | Server health & database connection status | `200` |
+| `POST` | `/groups` | Create group `{ name, members }` | `201` / `400` |
+| `GET` | `/groups/:id` | Retrieve group details | `200` / `404` |
+| `POST` | `/groups/:id/expenses` | Record expense `{ paidBy, amount, description, splitBetween? }` | `201` / `400` |
+| `GET` | `/groups/:id/expenses` | List group expenses | `200` / `404` |
+| `GET` | `/groups/:id/balances` | Calculate net balances per member | `200` / `404` |
+| `GET` | `/groups/:id/settlements/suggested` | Calculate minimal debt simplification list | `200` / `404` |
+| `POST` | `/groups/:id/settlements` | Record repayment transaction `{ from, to, amount }` | `201` / `400` |
 
-### API Payload Examples
+### Payload Examples
 
 #### Create Group (`POST /groups`)
 ```json
@@ -122,7 +122,7 @@ All request/response payloads use JSON format. All monetary `amount` values are 
 }
 ```
 
-#### Get Net Balances (`GET /groups/:id/balances`)
+#### Calculate Net Balances (`GET /groups/:id/balances`)
 ```json
 // Response (200 OK)
 {
@@ -135,7 +135,7 @@ All request/response payloads use JSON format. All monetary `amount` values are 
 }
 ```
 
-#### Get Suggested Simplified Debts (`GET /groups/:id/settlements/suggested`)
+#### Get Suggested Settlements (`GET /groups/:id/settlements/suggested`)
 ```json
 // Response (200 OK)
 {
@@ -149,52 +149,43 @@ All request/response payloads use JSON format. All monetary `amount` values are 
 
 ---
 
-## 🧮 Algorithm Deep Dive: Debt Simplification
+## Core Algorithms
 
-GroSplit implements two pure, testable algorithms in [`src/services/balanceService.js`](file:///c:/Users/admin/OneDrive/Desktop/git/GroSplit/src/services/balanceService.js):
+Core calculations are isolated as pure functions in [`src/services/balanceService.js`](file:///c:/Users/admin/OneDrive/Desktop/git/GroSplit/src/services/balanceService.js).
 
-### 1. Balance Calculation (`calculateBalances`)
-* **Exact Integer Cents**: Amounts are stored and processed in cents (`Math.floor`) to avoid floating-point inaccuracies.
-* **Deterministic Remainder Assignment**: When an expense cannot be divided evenly into cents (e.g. €10.00 / 1000 cents split 3 ways = 333 cents per person with 1 remainder cent), the extra remainder cents are assigned deterministically based on alphabetical member name sorting. This guarantees net group balances always sum exactly to zero.
-* **Custom Ratios & Settlements**: Supports optional weighted split ratios per participant (`shares`) and applies recorded repayments (`settlements`).
+### 1. Net Balance Calculation (`calculateBalances`)
+- **Integer Cents Math**: Prevents floating-point precision loss by working entirely in integer cents.
+- **Deterministic Remainder Cent Distribution**: For non-divisible amounts (e.g., 1000 cents divided 3 ways = 333 cents with 1 remainder cent), remainder cents are allocated deterministically to participants ordered alphabetically. This enforces the invariant $\sum \text{balances} = 0$.
+- **Settlement Adjustments**: Incorporates recorded repayments (`settlements`) to offset outstanding balances.
 
-### 2. Greedy Debt Simplification (`simplifyDebts`)
-Instead of making $N \times (N-1)$ individual transfers between members, `simplifyDebts` reduces total transactions to at most $N-1$:
-1. Partition members into **Debtors** (net balance $< 0$) and **Creditors** (net balance $> 0$).
-2. Sort Debtors descending by debt magnitude and Creditors descending by credit magnitude.
-3. Greedily transfer $\min(\text{debt}, \text{credit})$ from the largest debtor to the largest creditor.
-4. Advance pointers when balances hit 0 until all debts are resolved.
+### 2. Debt Simplification (`simplifyDebts`)
+Reduces multi-party debt transfers using a greedy matching algorithm:
+1. Partitions group members into **Debtors** ($\text{balance} < 0$) and **Creditors** ($\text{balance} > 0$).
+2. Sorts Debtors descending by debt magnitude and Creditors descending by credit magnitude.
+3. Iteratively resolves $\min(\text{debt}, \text{credit})$ between the largest debtor and largest creditor until all balances are zeroed.
 
 ---
 
-## 🧪 Testing & Code Coverage
+## Testing & CI
 
-The project maintains comprehensive unit and integration test suites powered by Jest and Supertest with `mongodb-memory-server`.
+Unit and integration tests are built using Jest, Supertest, and `mongodb-memory-server`.
 
 ```bash
-# Run all unit and integration tests
+# Run unit and integration tests
 npm test
 
-# Run tests with code coverage report
+# Generate code coverage report
 npm run test:coverage
 
-# Run ESLint linter
+# Run ESLint check
 npm run lint
 ```
 
-### Coverage Metrics
-* **Statement Coverage**: **94.53%**
-* **Line Coverage**: **95.25%**
-* **Function Coverage**: **100%**
-* **Test Count**: **61 passing tests across 5 test suites**
+### Coverage Statistics
+- **Statement Coverage**: 94.53%
+- **Line Coverage**: 95.25%
+- **Function Coverage**: 100%
+- **Test Count**: 61 passing tests across 5 test suites
 
----
-
-## 🔄 Continuous Integration (CI)
-
-GitHub Actions automatically runs `.github/workflows/ci.yml` on `push` and `pull_request` to `main`/`master`:
-1. Checks out codebase (`actions/checkout@v4`).
-2. Configures Node.js 20 environment with npm caching (`actions/setup-node@v4`).
-3. Executes ESLint static check (`npm run lint`).
-4. Executes unit and integration test suite with coverage (`npm run test:coverage`).
-5. Validates production Docker image build (`docker/build-push-action@v5`).
+### Continuous Integration
+GitHub Actions runs `.github/workflows/ci.yml` on push and pull requests targeting `master` and `main` branches, verifying linting, test execution, coverage, and Docker build steps.
