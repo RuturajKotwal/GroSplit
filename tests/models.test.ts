@@ -1,10 +1,10 @@
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
-const Group = require('../src/models/Group');
-const Expense = require('../src/models/Expense');
-const Settlement = require('../src/models/Settlement');
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import Group from '../src/models/Group';
+import Expense from '../src/models/Expense';
+import Settlement from '../src/models/Settlement';
 
-let mongoServer;
+let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
@@ -55,10 +55,10 @@ describe('Group Model', () => {
 });
 
 describe('Expense Model', () => {
-  let group;
+  let groupInstance: InstanceType<typeof Group>;
 
   beforeEach(async () => {
-    group = await Group.create({
+    groupInstance = await Group.create({
       name: 'Groceries Team',
       members: ['Alice', 'Bob', 'Charlie'],
     });
@@ -66,9 +66,9 @@ describe('Expense Model', () => {
 
   it('should create a valid expense and default splitBetween to all members', async () => {
     const expense = new Expense({
-      groupId: group._id,
+      groupId: groupInstance._id,
       paidBy: 'Alice',
-      amount: 3000, // $30.00 in cents
+      amount: 3000,
       description: 'Weekly Groceries',
     });
 
@@ -80,7 +80,7 @@ describe('Expense Model', () => {
 
   it('should allow custom splitBetween if all are valid members', async () => {
     const expense = new Expense({
-      groupId: group._id,
+      groupId: groupInstance._id,
       paidBy: 'Bob',
       amount: 1500,
       description: 'Snacks',
@@ -93,9 +93,9 @@ describe('Expense Model', () => {
 
   it('should fail if amount is negative or not an integer', async () => {
     const invalidAmountExpense = new Expense({
-      groupId: group._id,
+      groupId: groupInstance._id,
       paidBy: 'Alice',
-      amount: 12.5, // float
+      amount: 12.5,
       description: 'Invalid Float Amount',
     });
 
@@ -104,7 +104,7 @@ describe('Expense Model', () => {
     );
 
     const negativeAmountExpense = new Expense({
-      groupId: group._id,
+      groupId: groupInstance._id,
       paidBy: 'Alice',
       amount: -500,
       description: 'Negative Amount',
@@ -117,8 +117,8 @@ describe('Expense Model', () => {
 
   it('should fail if paidBy is not a group member', async () => {
     const expense = new Expense({
-      groupId: group._id,
-      paidBy: 'Dave', // Not in group
+      groupId: groupInstance._id,
+      paidBy: 'Dave',
       amount: 2000,
       description: 'Dinner',
     });
@@ -130,11 +130,11 @@ describe('Expense Model', () => {
 
   it('should fail if member in splitBetween is not a group member', async () => {
     const expense = new Expense({
-      groupId: group._id,
+      groupId: groupInstance._id,
       paidBy: 'Alice',
       amount: 2000,
       description: 'Drinks',
-      splitBetween: ['Alice', 'Dave'], // Dave is invalid
+      splitBetween: ['Alice', 'Dave'],
     });
 
     await expect(expense.save()).rejects.toThrow(
@@ -158,10 +158,10 @@ describe('Expense Model', () => {
 });
 
 describe('Settlement Model', () => {
-  let group;
+  let groupInstance: InstanceType<typeof Group>;
 
   beforeEach(async () => {
-    group = await Group.create({
+    groupInstance = await Group.create({
       name: 'Flatmates',
       members: ['Alice', 'Bob', 'Charlie'],
     });
@@ -169,10 +169,10 @@ describe('Settlement Model', () => {
 
   it('should create a valid settlement', async () => {
     const settlement = new Settlement({
-      groupId: group._id,
+      groupId: groupInstance._id,
       from: 'Bob',
       to: 'Alice',
-      amount: 1000, // $10.00 in cents
+      amount: 1000,
     });
 
     const saved = await settlement.save();
@@ -184,7 +184,7 @@ describe('Settlement Model', () => {
 
   it('should fail if from and to are the same person', async () => {
     const settlement = new Settlement({
-      groupId: group._id,
+      groupId: groupInstance._id,
       from: 'Alice',
       to: 'Alice',
       amount: 1000,
@@ -197,7 +197,7 @@ describe('Settlement Model', () => {
 
   it('should fail if from or to is not a member of the group', async () => {
     const invalidFrom = new Settlement({
-      groupId: group._id,
+      groupId: groupInstance._id,
       from: 'Dave',
       to: 'Alice',
       amount: 1000,
@@ -208,7 +208,7 @@ describe('Settlement Model', () => {
     );
 
     const invalidTo = new Settlement({
-      groupId: group._id,
+      groupId: groupInstance._id,
       from: 'Alice',
       to: 'Dave',
       amount: 1000,

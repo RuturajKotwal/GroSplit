@@ -1,8 +1,9 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema } from 'mongoose';
+import { IExpense, IGroup } from '../types';
 
-const expenseSchema = new mongoose.Schema({
+const expenseSchema = new Schema<IExpense>({
   groupId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Group',
     required: [true, 'Group ID is required'],
     index: true,
@@ -16,7 +17,7 @@ const expenseSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Amount is required'],
     validate: {
-      validator: function (val) {
+      validator: function (val: number) {
         return Number.isInteger(val) && val > 0;
       },
       message: 'Amount must be a positive integer (in cents)',
@@ -35,12 +36,20 @@ const expenseSchema = new mongoose.Schema({
     type: [String],
     default: undefined,
   },
+  shares: {
+    type: Schema.Types.Mixed,
+    default: undefined,
+  },
+  ratios: {
+    type: Schema.Types.Mixed,
+    default: undefined,
+  },
 });
 
 expenseSchema.pre('validate', async function (next) {
   if (!this.groupId) return next();
 
-  const Group = mongoose.model('Group');
+  const Group = mongoose.model<IGroup>('Group');
   const group = await Group.findById(this.groupId);
   if (!group) {
     this.invalidate('groupId', 'Referenced group does not exist');
@@ -72,4 +81,4 @@ expenseSchema.pre('validate', async function (next) {
   next();
 });
 
-module.exports = mongoose.model('Expense', expenseSchema);
+export default mongoose.model<IExpense>('Expense', expenseSchema);

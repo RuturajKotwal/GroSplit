@@ -1,11 +1,16 @@
-const mongoose = require('mongoose');
+import { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
 
 /**
  * Middleware to validate MongoDB ObjectId parameters.
  */
-function validateGroupId(req, res, next) {
-  const { id } = req.params;
-  if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+export function validateGroupId(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Response | void {
+  const id = req.params.id;
+  if (!id || typeof id !== 'string' || !mongoose.Types.ObjectId.isValid(id)) {
     return res.status(400).json({ error: 'Invalid group ID format' });
   }
   next();
@@ -14,7 +19,11 @@ function validateGroupId(req, res, next) {
 /**
  * Middleware to validate Group creation payload.
  */
-function validateCreateGroup(req, res, next) {
+export function validateCreateGroup(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Response | void {
   const { name, members } = req.body;
 
   if (!name || typeof name !== 'string' || name.trim() === '') {
@@ -41,7 +50,11 @@ function validateCreateGroup(req, res, next) {
 /**
  * Middleware to validate Expense creation payload.
  */
-function validateCreateExpense(req, res, next) {
+export function validateCreateExpense(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Response | void {
   const { paidBy, amount, description, splitBetween } = req.body;
 
   if (!paidBy || typeof paidBy !== 'string' || paidBy.trim() === '') {
@@ -83,7 +96,11 @@ function validateCreateExpense(req, res, next) {
 /**
  * Middleware to validate Settlement creation payload.
  */
-function validateCreateSettlement(req, res, next) {
+export function validateCreateSettlement(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Response | void {
   const { from, to, amount } = req.body;
 
   if (!from || typeof from !== 'string' || from.trim() === '') {
@@ -108,10 +125,3 @@ function validateCreateSettlement(req, res, next) {
 
   next();
 }
-
-module.exports = {
-  validateGroupId,
-  validateCreateGroup,
-  validateCreateExpense,
-  validateCreateSettlement,
-};

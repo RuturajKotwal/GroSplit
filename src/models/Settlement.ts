@@ -1,8 +1,9 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema } from 'mongoose';
+import { IGroup, ISettlement } from '../types';
 
-const settlementSchema = new mongoose.Schema({
+const settlementSchema = new Schema<ISettlement>({
   groupId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: Schema.Types.ObjectId,
     ref: 'Group',
     required: [true, 'Group ID is required'],
     index: true,
@@ -21,7 +22,7 @@ const settlementSchema = new mongoose.Schema({
     type: Number,
     required: [true, 'Amount is required'],
     validate: {
-      validator: function (val) {
+      validator: function (val: number) {
         return Number.isInteger(val) && val > 0;
       },
       message: 'Amount must be a positive integer (in cents)',
@@ -40,7 +41,7 @@ settlementSchema.pre('validate', async function (next) {
 
   if (!this.groupId) return next();
 
-  const Group = mongoose.model('Group');
+  const Group = mongoose.model<IGroup>('Group');
   const group = await Group.findById(this.groupId);
   if (!group) {
     this.invalidate('groupId', 'Referenced group does not exist');
@@ -61,4 +62,4 @@ settlementSchema.pre('validate', async function (next) {
   next();
 });
 
-module.exports = mongoose.model('Settlement', settlementSchema);
+export default mongoose.model<ISettlement>('Settlement', settlementSchema);

@@ -4,13 +4,16 @@ FROM node:20-alpine
 WORKDIR /app
 
 # Copy dependency manifests
-COPY package*.json ./
+COPY package*.json tsconfig.json ./
 
-# Install production dependencies only
-RUN npm ci --only=production
+# Install dependencies (including devDependencies required for compilation)
+RUN npm ci
 
 # Copy application source code
 COPY src/ ./src/
+
+# Compile TypeScript to JavaScript
+RUN npm run build
 
 # Expose API port
 EXPOSE 5000
@@ -19,5 +22,5 @@ EXPOSE 5000
 ENV NODE_ENV=production
 ENV PORT=5000
 
-# Start server
-CMD ["node", "src/server.js"]
+# Start server from compiled JavaScript
+CMD ["node", "dist/server.js"]

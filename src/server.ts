@@ -1,6 +1,8 @@
-require('dotenv').config();
-const app = require('./app');
-const mongoose = require('mongoose');
+import dotenv from 'dotenv';
+import mongoose from 'mongoose';
+import app from './app';
+
+dotenv.config();
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
@@ -13,7 +15,7 @@ const startServer = async () => {
         console.log('Connected to MongoDB');
       } catch (dbErr) {
         console.warn(
-          `Could not connect to MongoDB (${dbErr.message}); running server without active DB connection.`
+          `Could not connect to MongoDB (${(dbErr as Error).message}); running server without active DB connection.`
         );
       }
     } else {
@@ -36,4 +38,4 @@ if (require.main === module) {
   startServer();
 }
 
-module.exports = startServer;
+export default startServer;

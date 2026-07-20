@@ -1,6 +1,7 @@
-const mongoose = require('mongoose');
+import mongoose, { Schema } from 'mongoose';
+import { IGroup } from '../types';
 
-const groupSchema = new mongoose.Schema(
+const groupSchema = new Schema<IGroup>(
   {
     name: {
       type: String,
@@ -11,7 +12,7 @@ const groupSchema = new mongoose.Schema(
       type: [String],
       required: [true, 'Group members are required'],
       validate: {
-        validator: function (val) {
+        validator: function (val: string[]) {
           return Array.isArray(val) && val.length > 0;
         },
         message: 'Group must have at least one member',
@@ -21,4 +22,4 @@ const groupSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Group', groupSchema);
+export default mongoose.model<IGroup>('Group', groupSchema);

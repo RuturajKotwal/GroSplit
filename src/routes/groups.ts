@@ -1,24 +1,20 @@
-const express = require('express');
-const Group = require('../models/Group');
-const Expense = require('../models/Expense');
-const Settlement = require('../models/Settlement');
-const {
-  calculateBalances,
-  simplifyDebts,
-} = require('../services/balanceService');
-const {
+import express, { Request, Response, NextFunction } from 'express';
+import mongoose from 'mongoose';
+import Group from '../models/Group';
+import Expense from '../models/Expense';
+import Settlement from '../models/Settlement';
+import { calculateBalances, simplifyDebts } from '../services/balanceService';
+import {
   validateGroupId,
   validateCreateGroup,
   validateCreateExpense,
   validateCreateSettlement,
-} = require('../middleware/validate');
-
-const mongoose = require('mongoose');
+} from '../middleware/validate';
 
 const router = express.Router();
 
 // Middleware to ensure database connection before processing group requests
-router.use(async (req, res, next) => {
+router.use(async (_req: Request, res: Response, next: NextFunction) => {
   if (mongoose.connection.readyState !== 1) {
     const MONGO_URI = process.env.MONGO_URI || process.env.MONGODB_URI;
     if (MONGO_URI) {
@@ -26,7 +22,7 @@ router.use(async (req, res, next) => {
         await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
       } catch (err) {
         return res.status(500).json({
-          error: `Database connection failed: ${err.message}`,
+          error: `Database connection failed: ${(err as Error).message}`,
         });
       }
     } else {
@@ -40,38 +36,46 @@ router.use(async (req, res, next) => {
 });
 
 // POST /groups - Create a new group
-router.post('/', validateCreateGroup, async (req, res, next) => {
-  try {
-    const { name, members } = req.body;
-    const group = await Group.create({ name, members });
-    return res.status(201).json(group);
-  } catch (err) {
-    if (err.name === 'ValidationError') {
-      return res.status(400).json({ error: err.message });
+router.post(
+  '/',
+  validateCreateGroup,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { name, members } = req.body;
+      const group = await Group.create({ name, members });
+      return res.status(201).json(group);
+    } catch (err) {
+      if ((err as Error).name === 'ValidationError') {
+        return res.status(400).json({ error: (err as Error).message });
+      }
+      return next(err);
     }
-    return next(err);
   }
-});
+);
 
 // GET /groups/:id - Fetch group details
-router.get('/:id', validateGroupId, async (req, res, next) => {
-  try {
-    const group = await Group.findById(req.params.id);
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
+router.get(
+  '/:id',
+  validateGroupId,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const group = await Group.findById(req.params.id);
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+      }
+      return res.status(200).json(group);
+    } catch (err) {
+      return next(err);
     }
-    return res.status(200).json(group);
-  } catch (err) {
-    return next(err);
   }
-});
+);
 
 // POST /groups/:id/expenses - Add an expense to a group
 router.post(
   '/:id/expenses',
   validateGroupId,
   validateCreateExpense,
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const group = await Group.findById(req.params.id);
       if (!group) {
@@ -94,8 +98,8 @@ router.post(
       await expense.save();
       return res.status(201).json(expense);
     } catch (err) {
-      if (err.name === 'ValidationError') {
-        return res.status(400).json({ error: err.message });
+      if ((err as Error).name === 'ValidationError') {
+        return res.status(400).json({ error: (err as Error).message });
       }
       return next(err);
     }
@@ -103,45 +107,53 @@ router.post(
 );
 
 // GET /groups/:id/expenses - List all expenses for a group
-router.get('/:id/expenses', validateGroupId, async (req, res, next) => {
-  try {
-    const group = await Group.findById(req.params.id);
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
-    }
+router.get(
+  '/:id/expenses',
+  validateGroupId,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const group = await Group.findById(req.params.id);
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+      }
 
-    const expenses = await Expense.find({ groupId: group._id }).sort({
-      date: 1,
-    });
-    return res.status(200).json(expenses);
-  } catch (err) {
-    return next(err);
+      const expenses = await Expense.find({ groupId: group._id }).sort({
+        date: 1,
+      });
+      return res.status(200).json(expenses);
+    } catch (err) {
+      return next(err);
+    }
   }
-});
+);
 
 // GET /groups/:id/balances - Calculate net balance per member
-router.get('/:id/balances', validateGroupId, async (req, res, next) => {
-  try {
-    const group = await Group.findById(req.params.id);
-    if (!group) {
-      return res.status(404).json({ error: 'Group not found' });
+router.get(
+  '/:id/balances',
+  validateGroupId,
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const group = await Group.findById(req.params.id);
+      if (!group) {
+        return res.status(404).json({ error: 'Group not found' });
+      }
+
+      const expenses = await Expense.find({ groupId: group._id });
+      const settlements = await Settlement.find({ groupId: group._id });
+
+      const balances = calculateBalances(expenses, settlements, group.members);
+      return res.status(200).json({ groupId: group._id, balances });
+    } catch (err) {
+      return next(err);
     }
-
-    const expenses = await Expense.find({ groupId: group._id });
-    const settlements = await Settlement.find({ groupId: group._id });
-
-    const balances = calculateBalances(expenses, settlements, group.members);
-    return res.status(200).json({ groupId: group._id, balances });
-  } catch (err) {
-    return next(err);
   }
-});
+);
 
 // GET /groups/:id/settlements/suggested - Get simplified debt list
 router.get(
   '/:id/settlements/suggested',
   validateGroupId,
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const group = await Group.findById(req.params.id);
       if (!group) {
@@ -168,7 +180,7 @@ router.post(
   '/:id/settlements',
   validateGroupId,
   validateCreateSettlement,
-  async (req, res, next) => {
+  async (req: Request, res: Response, next: NextFunction) => {
     try {
       const group = await Group.findById(req.params.id);
       if (!group) {
@@ -187,12 +199,12 @@ router.post(
       await settlement.save();
       return res.status(201).json(settlement);
     } catch (err) {
-      if (err.name === 'ValidationError') {
-        return res.status(400).json({ error: err.message });
+      if ((err as Error).name === 'ValidationError') {
+        return res.status(400).json({ error: (err as Error).message });
       }
       return next(err);
     }
   }
 );
 
-module.exports = router;
+export default router;

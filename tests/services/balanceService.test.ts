@@ -1,7 +1,7 @@
-const {
+import {
   calculateBalances,
   simplifyDebts,
-} = require('../../src/services/balanceService');
+} from '../../src/services/balanceService';
 
 describe('balanceService', () => {
   describe('calculateBalances', () => {
@@ -14,7 +14,8 @@ describe('balanceService', () => {
           splitBetween: ['Alice', 'Bob', 'Charlie'],
         },
       ];
-      const settlements = [];
+      const settlements: Array<{ from: string; to: string; amount: number }> =
+        [];
 
       const balances = calculateBalances(expenses, settlements, members);
 
@@ -41,10 +42,6 @@ describe('balanceService', () => {
 
       const balances = calculateBalances(expenses, [], members);
 
-      // Alice is sorted first alphabetically, so Alice takes the extra 1 cent share (334)
-      // Alice balance: +1000 (as payer) - 334 (share) = +666
-      // Bob balance: -333
-      // Charlie balance: -333
       expect(balances).toEqual({
         Alice: 666,
         Bob: -333,
@@ -68,7 +65,7 @@ describe('balanceService', () => {
       const balances = calculateBalances(expenses, [], members);
 
       expect(balances).toEqual({
-        Alice: 1000, // Paid 1000, not in splitBetween
+        Alice: 1000,
         Bob: -500,
         Charlie: -500,
       });
@@ -84,14 +81,14 @@ describe('balanceService', () => {
           paidBy: 'Alice',
           amount: 4000,
           splitBetween: ['Alice', 'Bob', 'Charlie'],
-          shares: { Alice: 2, Bob: 1, Charlie: 1 }, // Total 4 parts: Alice 2000, Bob 1000, Charlie 1000
+          shares: { Alice: 2, Bob: 1, Charlie: 1 },
         },
       ];
 
       const balances = calculateBalances(expenses, [], members);
 
       expect(balances).toEqual({
-        Alice: 2000, // +4000 - 2000
+        Alice: 2000,
         Bob: -1000,
         Charlie: -1000,
       });
@@ -120,8 +117,8 @@ describe('balanceService', () => {
       const balances = calculateBalances(expenses, settlements, members);
 
       expect(balances).toEqual({
-        Alice: 1000, // Was +2000, received 1000 settlement (-1000) -> +1000
-        Bob: 0, // Was -1000, paid 1000 settlement (+1000) -> 0
+        Alice: 1000,
+        Bob: 0,
         Charlie: -1000,
       });
 
@@ -181,13 +178,13 @@ describe('balanceService', () => {
 
     it('should safely skip malformed or non-positive expenses and settlements', () => {
       const expenses = [
-        { paidBy: '', amount: 1000 }, // Missing paidBy
-        { paidBy: 'Alice', amount: 0 }, // Invalid amount
-        { paidBy: 'Alice', amount: 1000, splitBetween: [] }, // Empty participants when members is empty
+        { paidBy: '', amount: 1000 },
+        { paidBy: 'Alice', amount: 0 },
+        { paidBy: 'Alice', amount: 1000, splitBetween: [] },
       ];
       const settlements = [
-        { from: '', to: 'Alice', amount: 500 }, // Missing from
-        { from: 'Bob', to: 'Alice', amount: -100 }, // Invalid amount
+        { from: '', to: 'Alice', amount: 500 },
+        { from: 'Bob', to: 'Alice', amount: -100 },
       ];
 
       const balances = calculateBalances(expenses, settlements, []);
@@ -211,7 +208,6 @@ describe('balanceService', () => {
     });
 
     it('should resolve a 3-person chain debt (A owes B, B owes C -> A owes C)', () => {
-      // Alice is owed 1000, Bob net 0, Charlie owes 1000
       const balances = { Alice: 1000, Bob: 0, Charlie: -1000 };
       const transactions = simplifyDebts(balances);
       expect(transactions).toEqual([
@@ -229,16 +225,12 @@ describe('balanceService', () => {
 
       const transactions = simplifyDebts(balances);
 
-      // Step 1: Charlie (4000) pays Alice (5000) -> 4000. Alice left with 1000 credit.
-      // Step 2: David (3000) pays Alice remaining (1000) -> 1000. David left with 2000 debt.
-      // Step 3: David (2000) pays Bob (2000) -> 2000.
       expect(transactions).toEqual([
         { from: 'Charlie', to: 'Alice', amount: 4000 },
         { from: 'David', to: 'Alice', amount: 1000 },
         { from: 'David', to: 'Bob', amount: 2000 },
       ]);
 
-      // Verification: Total transferred must equal total positive balances
       const totalTransferred = transactions.reduce(
         (sum, t) => sum + t.amount,
         0
@@ -256,7 +248,6 @@ describe('balanceService', () => {
 
       const transactions = simplifyDebts(balances);
 
-      // Alphabetical sorting breaks ties: Charlie (-1000) pays Alice (+1000), David (-1000) pays Bob (+1000)
       expect(transactions).toEqual([
         { from: 'Charlie', to: 'Alice', amount: 1000 },
         { from: 'David', to: 'Bob', amount: 1000 },

@@ -1,3 +1,10 @@
+import {
+  BalanceMap,
+  ExpenseCalculationObject,
+  SettlementCalculationObject,
+  SimplifiedTransaction,
+} from '../types';
+
 /**
  * Core business logic for calculating group balances and simplifying debts.
  */
@@ -5,13 +12,17 @@
 /**
  * Calculates net balances for each member in a group given expenses and settlements.
  *
- * @param {Array<Object>} expenses - List of expense objects
- * @param {Array<Object>} settlements - List of settlement objects
- * @param {Array<string>} members - List of member names in the group
- * @returns {Object<string, number>} Object mapping member name to net balance in cents (positive = owed money, negative = owes money)
+ * @param expenses - List of expense objects
+ * @param settlements - List of settlement objects
+ * @param members - List of member names in the group
+ * @returns Object mapping member name to net balance in cents (positive = owed money, negative = owes money)
  */
-function calculateBalances(expenses = [], settlements = [], members = []) {
-  const balances = {};
+export function calculateBalances(
+  expenses: ExpenseCalculationObject[] = [],
+  settlements: SettlementCalculationObject[] = [],
+  members: string[] = []
+): BalanceMap {
+  const balances: BalanceMap = {};
 
   // Initialize all members with 0 balance
   for (const member of members) {
@@ -19,7 +30,7 @@ function calculateBalances(expenses = [], settlements = [], members = []) {
   }
 
   // Helper to ensure member exists in balances map
-  const ensureMember = (member) => {
+  const ensureMember = (member: string): void => {
     if (balances[member] === undefined) {
       balances[member] = 0;
     }
@@ -36,7 +47,7 @@ function calculateBalances(expenses = [], settlements = [], members = []) {
     ensureMember(paidBy);
 
     // Default splitBetween to all known members if unassigned or empty
-    const participants =
+    const participants: string[] =
       Array.isArray(splitBetween) && splitBetween.length > 0
         ? splitBetween
         : [...members];
@@ -51,7 +62,7 @@ function calculateBalances(expenses = [], settlements = [], members = []) {
 
     // Determine split weights
     const weightMap = shares || ratios;
-    let weights = {};
+    let weights: Record<string, number> = {};
     let totalWeight = 0;
 
     if (weightMap && typeof weightMap === 'object') {
@@ -72,7 +83,7 @@ function calculateBalances(expenses = [], settlements = [], members = []) {
     }
 
     // Calculate base shares in cents (using Math.floor)
-    const participantShares = {};
+    const participantShares: Record<string, number> = {};
     let totalAllocated = 0;
 
     for (const m of participants) {
@@ -82,7 +93,7 @@ function calculateBalances(expenses = [], settlements = [], members = []) {
     }
 
     // Distribute remainder cents deterministically (alphabetically sorted participant names)
-    let remainder = amount - totalAllocated;
+    const remainder = amount - totalAllocated;
     if (remainder > 0) {
       const sortedParticipants = [...participants].sort();
       for (let i = 0; i < remainder; i++) {
@@ -120,16 +131,23 @@ function calculateBalances(expenses = [], settlements = [], members = []) {
   return balances;
 }
 
+interface DebtorCreditorNode {
+  member: string;
+  amount: number;
+}
+
 /**
  * Simplifies net balances into a minimal list of debt settlement transactions.
  * Uses a greedy matching algorithm matching largest debtor to largest creditor.
  *
- * @param {Object<string, number>} balances - Net balance per member in cents
- * @returns {Array<{ from: string, to: string, amount: number }>} Minimal list of settlement transactions
+ * @param balances - Net balance per member in cents
+ * @returns Minimal list of settlement transactions
  */
-function simplifyDebts(balances = {}) {
-  const debtors = [];
-  const creditors = [];
+export function simplifyDebts(
+  balances: BalanceMap = {}
+): SimplifiedTransaction[] {
+  const debtors: DebtorCreditorNode[] = [];
+  const creditors: DebtorCreditorNode[] = [];
 
   for (const [member, balance] of Object.entries(balances)) {
     if (balance < 0) {
@@ -149,7 +167,7 @@ function simplifyDebts(balances = {}) {
     (a, b) => b.amount - a.amount || a.member.localeCompare(b.member)
   );
 
-  const transactions = [];
+  const transactions: SimplifiedTransaction[] = [];
   let d = 0;
   let c = 0;
 
@@ -180,8 +198,3 @@ function simplifyDebts(balances = {}) {
 
   return transactions;
 }
-
-module.exports = {
-  calculateBalances,
-  simplifyDebts,
-};

@@ -1,12 +1,12 @@
-const request = require('supertest');
-const mongoose = require('mongoose');
-const { MongoMemoryServer } = require('mongodb-memory-server');
-const app = require('../../src/app');
-const Group = require('../../src/models/Group');
-const Expense = require('../../src/models/Expense');
-const Settlement = require('../../src/models/Settlement');
+import request from 'supertest';
+import mongoose from 'mongoose';
+import { MongoMemoryServer } from 'mongodb-memory-server';
+import app from '../../src/app';
+import Group from '../../src/models/Group';
+import Expense from '../../src/models/Expense';
+import Settlement from '../../src/models/Settlement';
 
-let mongoServer;
+let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
   mongoServer = await MongoMemoryServer.create();
@@ -94,10 +94,10 @@ describe('Groups API Endpoints', () => {
   });
 
   describe('POST /groups/:id/expenses', () => {
-    let group;
+    let groupInstance: InstanceType<typeof Group>;
 
     beforeEach(async () => {
-      group = await Group.create({
+      groupInstance = await Group.create({
         name: 'Dinner Club',
         members: ['Alice', 'Bob', 'Charlie'],
       });
@@ -105,7 +105,7 @@ describe('Groups API Endpoints', () => {
 
     it('should create an expense for a valid group', async () => {
       const res = await request(app)
-        .post(`/groups/${group._id}/expenses`)
+        .post(`/groups/${groupInstance._id}/expenses`)
         .send({
           paidBy: 'Alice',
           amount: 3000,
@@ -122,9 +122,9 @@ describe('Groups API Endpoints', () => {
 
     it('should return 400 if payer is not a group member', async () => {
       const res = await request(app)
-        .post(`/groups/${group._id}/expenses`)
+        .post(`/groups/${groupInstance._id}/expenses`)
         .send({
-          paidBy: 'Dave', // Not in group
+          paidBy: 'Dave',
           amount: 2000,
           description: 'Drinks',
         });
@@ -137,17 +137,17 @@ describe('Groups API Endpoints', () => {
 
     it('should return 400 if amount is non-integer or <= 0', async () => {
       const floatRes = await request(app)
-        .post(`/groups/${group._id}/expenses`)
+        .post(`/groups/${groupInstance._id}/expenses`)
         .send({
           paidBy: 'Alice',
-          amount: 15.75, // float
+          amount: 15.75,
           description: 'Float test',
         });
 
       expect(floatRes.statusCode).toBe(400);
 
       const negativeRes = await request(app)
-        .post(`/groups/${group._id}/expenses`)
+        .post(`/groups/${groupInstance._id}/expenses`)
         .send({
           paidBy: 'Alice',
           amount: -500,
@@ -282,28 +282,26 @@ describe('Groups API Endpoints', () => {
   });
 
   describe('POST /groups/:id/settlements', () => {
-    let group;
+    let groupInstance: InstanceType<typeof Group>;
 
     beforeEach(async () => {
-      group = await Group.create({
+      groupInstance = await Group.create({
         name: 'Camping Trip',
         members: ['Alice', 'Bob'],
       });
     });
 
     it('should record a settlement and update balances accordingly', async () => {
-      // 1. Add expense: Alice pays 2000 split between Alice & Bob -> Alice +1000, Bob -1000
       await Expense.create({
-        groupId: group._id,
+        groupId: groupInstance._id,
         paidBy: 'Alice',
         amount: 2000,
         description: 'Tent rental',
         splitBetween: ['Alice', 'Bob'],
       });
 
-      // 2. Post settlement: Bob pays Alice 1000
       const setRes = await request(app)
-        .post(`/groups/${group._id}/settlements`)
+        .post(`/groups/${groupInstance._id}/settlements`)
         .send({
           from: 'Bob',
           to: 'Alice',
@@ -316,8 +314,9 @@ describe('Groups API Endpoints', () => {
       expect(setRes.body.to).toBe('Alice');
       expect(setRes.body.amount).toBe(1000);
 
-      // 3. Verify balances are now 0
-      const balRes = await request(app).get(`/groups/${group._id}/balances`);
+      const balRes = await request(app).get(
+        `/groups/${groupInstance._id}/balances`
+      );
       expect(balRes.statusCode).toBe(200);
       expect(balRes.body.balances).toEqual({
         Alice: 0,
@@ -327,7 +326,7 @@ describe('Groups API Endpoints', () => {
 
     it('should return 400 if from and to are the same person', async () => {
       const res = await request(app)
-        .post(`/groups/${group._id}/settlements`)
+        .post(`/groups/${groupInstance._id}/settlements`)
         .send({
           from: 'Bob',
           to: 'Bob',
@@ -340,7 +339,7 @@ describe('Groups API Endpoints', () => {
 
     it('should return 400 if member in settlement is not in group', async () => {
       const res = await request(app)
-        .post(`/groups/${group._id}/settlements`)
+        .post(`/groups/${groupInstance._id}/settlements`)
         .send({
           from: 'Dave',
           to: 'Alice',
