@@ -5,7 +5,7 @@
     "moduleResolution": "node",
     "ignoreDeprecations": "6.0",
     "lib": ["ES2022"],
-    "rootDir": "./",
+    "rootDir": "./src",
     "outDir": "./dist",
     "strict": true,
     "esModuleInterop": true,
@@ -15,6 +15,6 @@
     "isolatedModules": true,
     "types": ["node", "jest"]
   },
-  "include": ["src/**/*", "tests/**/*"],
-  "exclude": ["node_modules", "dist", "coverage"]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "coverage", "tests"]
 }
