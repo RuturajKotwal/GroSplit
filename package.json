@@ -10,6 +10,9 @@
     "typecheck": "tsc --noEmit",
     "test": "jest --runInBand",
     "test:coverage": "jest --coverage --runInBand",
+    "client:dev": "npm --prefix admin-client run dev",
+    "client:build": "npm --prefix admin-client run build",
+    "client:test": "npm --prefix admin-client test",
     "lint": "eslint .",
     "format": "prettier --write ."
   },
