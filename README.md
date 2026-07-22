@@ -27,11 +27,13 @@ Key technical specifications:
 
 - **Runtime & Server**: Node.js 20, TypeScript, Express
 - **Database & ODM**: MongoDB, Mongoose (MongoDB Atlas)
+- **Observability & Logging**: `pino`, `pino-http` (structured JSON logging)
 - **Security & Reliability**: `express-rate-limit`, Header-based API key auth
+- **API Documentation**: OpenAPI 3.0, `swagger-ui-express`, `swagger-jsdoc`
 - **Testing**: Jest, `ts-jest`, Supertest, `mongodb-memory-server`
 - **Containerization**: Docker, Docker Compose
-- **CI/CD**: GitHub Actions
-- **Client**: Vanilla HTML5, CSS3, JavaScript (Fetch API)
+- **CI/CD**: GitHub Actions, GitLab CI
+- **Clients**: Vanilla HTML5/JS (v1 client) + React 18 / TypeScript SPA ([`/admin-client`](admin-client))
 
 ---
 

@@ -7,12 +7,12 @@ const router = express.Router();
  * @openapi
  * /health:
  *   get:
- *     summary: Health and database connectivity status
+ *     summary: Comprehensive system and database health status
  *     tags:
  *       - System
  *     responses:
  *       200:
- *         description: Server is operational and reports MongoDB connectivity status
+ *         description: Server is operational with database and process metrics
  *         content:
  *           application/json:
  *             schema:
@@ -37,9 +37,19 @@ router.get('/', async (_req: Request, res: Response) => {
     }
   }
 
+  const memoryUsage = process.memoryUsage();
+
   const responsePayload: Record<string, unknown> = {
-    status: 'OK',
+    status: isDbConnected ? 'OK' : 'DEGRADED',
     database: isDbConnected ? 'connected' : 'disconnected',
+    uptime: Math.floor(process.uptime()),
+    version: '2.0.0',
+    environment: process.env.NODE_ENV || 'development',
+    memory: {
+      heapUsedMB: +(memoryUsage.heapUsed / 1024 / 1024).toFixed(2),
+      heapTotalMB: +(memoryUsage.heapTotal / 1024 / 1024).toFixed(2),
+      rssMB: +(memoryUsage.rss / 1024 / 1024).toFixed(2),
+    },
     timestamp: new Date().toISOString(),
   };
 

@@ -1,7 +1,9 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import pinoHttp from 'pino-http';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
+import { logger } from './config/logger';
 import healthRouter from './routes/health';
 import groupsRouter from './routes/groups';
 
@@ -14,17 +16,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// HTTP Request Logger Middleware
-app.use((req: Request, res: Response, next: NextFunction) => {
-  const start = Date.now();
-  res.on('finish', () => {
-    const duration = Date.now() - start;
-    console.log(
-      `[${new Date().toISOString()}] ${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`
-    );
-  });
-  next();
-});
+// Structured HTTP Request Logging Middleware
+app.use(
+  pinoHttp({
+    logger,
+    autoLogging: {
+      ignore: (req) => process.env.NODE_ENV === 'test' && req.url === '/health',
+    },
+  })
+);
 
 // Swagger API Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -44,7 +44,7 @@ app.use(
     res: Response,
     _next: NextFunction
   ): Response => {
-    console.error('Unhandled Server Error:', err);
+    logger.error({ err }, 'Unhandled Server Error');
     const status = err.status || 500;
     return res.status(status).json({
       error: err.message || 'Internal Server Error',

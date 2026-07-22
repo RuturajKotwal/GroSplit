@@ -1,6 +1,7 @@
 import dotenv from 'dotenv';
 import mongoose from 'mongoose';
 import app from './app';
+import { logger } from './config/logger';
 
 dotenv.config();
 
@@ -12,24 +13,24 @@ const startServer = async () => {
     if (MONGO_URI) {
       try {
         await mongoose.connect(MONGO_URI, { serverSelectionTimeoutMS: 5000 });
-        console.log('Connected to MongoDB');
+        logger.info('Connected to MongoDB Atlas');
       } catch (dbErr) {
-        console.warn(
+        logger.warn(
           `Could not connect to MongoDB (${(dbErr as Error).message}); running server without active DB connection.`
         );
       }
     } else {
-      console.warn(
+      logger.warn(
         'MONGO_URI is not set; running server without DB connection.'
       );
     }
 
     const server = app.listen(PORT, () => {
-      console.log(`Server listening on port ${PORT}`);
+      logger.info(`Server listening on port ${PORT}`);
     });
     return server;
   } catch (error) {
-    console.error('Failed to start server:', error);
+    logger.error({ error }, 'Failed to start server');
     process.exit(1);
   }
 };

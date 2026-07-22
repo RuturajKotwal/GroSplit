@@ -159,6 +159,17 @@ const options: swaggerJsdoc.Options = {
           properties: {
             status: { type: 'string', example: 'OK' },
             database: { type: 'string', example: 'connected' },
+            uptime: { type: 'integer', example: 120 },
+            version: { type: 'string', example: '2.0.0' },
+            environment: { type: 'string', example: 'production' },
+            memory: {
+              type: 'object',
+              properties: {
+                heapUsedMB: { type: 'number', example: 34.5 },
+                heapTotalMB: { type: 'number', example: 52.1 },
+                rssMB: { type: 'number', example: 78.4 },
+              },
+            },
             timestamp: { type: 'string', format: 'date-time' },
           },
         },
