@@ -1,0 +1,106 @@
+# GitLab CI Pipeline for GroSplit
+# Mirrors automated linting, typechecking, testing, building, and container packaging
+
+image: node:20-alpine
+
+stages:
+  - lint_and_typecheck
+  - test
+  - build
+  - package
+
+variables:
+  npm_config_cache: "$CI_PROJECT_DIR/.npm"
+
+cache:
+  key:
+    files:
+      - package-lock.json
+      - admin-client/package-lock.json
+  paths:
+    - .npm/
+    - node_modules/
+    - admin-client/node_modules/
+
+# -------------------------------------------------------------------
+# Stage 1: Lint & Typecheck
+# -------------------------------------------------------------------
+lint:
+  stage: lint_and_typecheck
+  before_script:
+    - npm ci --prefer-offline
+  script:
+    - npm run lint
+
+typecheck:
+  stage: lint_and_typecheck
+  before_script:
+    - npm ci --prefer-offline
+  script:
+    - npm run typecheck
+
+# -------------------------------------------------------------------
+# Stage 2: Unit, Integration & Component Tests
+# -------------------------------------------------------------------
+test:backend:
+  stage: test
+  before_script:
+    - npm ci --prefer-offline
+  script:
+    - npm run test:coverage
+  coverage: '/All files[^|]*\|[^|]*\s+([\d\.]+)/'
+  artifacts:
+    when: always
+    reports:
+      junit: junit.xml
+    paths:
+      - coverage/
+    expire_in: 7 days
+
+test:client:
+  stage: test
+  before_script:
+    - cd admin-client && npm ci --prefer-offline && cd ..
+  script:
+    - npm run client:test
+
+# -------------------------------------------------------------------
+# Stage 3: Compilation & Production Builds
+# -------------------------------------------------------------------
+build:backend:
+  stage: build
+  before_script:
+    - npm ci --prefer-offline
+  script:
+    - npm run build
+  artifacts:
+    paths:
+      - dist/
+    expire_in: 7 days
+
+build:client:
+  stage: build
+  before_script:
+    - cd admin-client && npm ci --prefer-offline && cd ..
+  script:
+    - npm run client:build
+  artifacts:
+    paths:
+      - admin-client/dist/
+    expire_in: 7 days
+
+# -------------------------------------------------------------------
+# Stage 4: Container Packaging
+# -------------------------------------------------------------------
+package:docker:
+  stage: package
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+  before_script: []
+  script:
+    - docker build -t grosplit:$CI_COMMIT_SHA .
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "master"'

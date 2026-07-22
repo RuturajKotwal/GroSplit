@@ -217,8 +217,11 @@ npm run lint
 ```
 
 ### Coverage Statistics
-- **Test Count**: 68 passing tests across 7 test suites
+- **Backend Test Count**: 71 passing tests across 8 test suites
+- **React Component Test Count**: 6 passing tests across 3 test suites
 - **Coverage**: >90% across statements, lines, and branches
 
-### Continuous Integration
-GitHub Actions runs `.github/workflows/ci.yml` on push and pull requests targeting `master` and `main` branches, verifying linting, typechecking, test execution, coverage, and Docker build steps.
+### Continuous Integration & Pipelines
+CI/CD workflows are configured for both **GitHub Actions** and **GitLab CI**:
+- **GitHub Actions** ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)): Automates linting, TypeScript typechecking, test coverage reporting, and Docker image build steps on all pushes and pull requests to `main` and `master`.
+- **GitLab CI** ([`.gitlab-ci.yml`](.gitlab-ci.yml)): Multi-stage pipeline defining `lint_and_typecheck`, `test` (backend coverage + React component tests), `build` (TypeScript backend + Vite client), and `package` (Docker-in-Docker container compilation).
