@@ -10,6 +10,8 @@ import {
   validateCreateExpense,
   validateCreateSettlement,
 } from '../middleware/validate';
+import { requireApiKey } from '../middleware/auth';
+import { writeRateLimiter } from '../middleware/rateLimiter';
 
 const router = express.Router();
 
@@ -35,9 +37,11 @@ router.use(async (_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// POST /groups - Create a new group
+// POST /groups - Create a new group (requires Auth & Rate Limiting)
 router.post(
   '/',
+  writeRateLimiter,
+  requireApiKey,
   validateCreateGroup,
   async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -53,7 +57,7 @@ router.post(
   }
 );
 
-// GET /groups/:id - Fetch group details
+// GET /groups/:id - Fetch group details (Public Read)
 router.get(
   '/:id',
   validateGroupId,
@@ -70,9 +74,11 @@ router.get(
   }
 );
 
-// POST /groups/:id/expenses - Add an expense to a group
+// POST /groups/:id/expenses - Add an expense to a group (requires Auth & Rate Limiting)
 router.post(
   '/:id/expenses',
+  writeRateLimiter,
+  requireApiKey,
   validateGroupId,
   validateCreateExpense,
   async (req: Request, res: Response, next: NextFunction) => {
@@ -106,7 +112,7 @@ router.post(
   }
 );
 
-// GET /groups/:id/expenses - List all expenses for a group
+// GET /groups/:id/expenses - List all expenses for a group (Public Read)
 router.get(
   '/:id/expenses',
   validateGroupId,
@@ -127,7 +133,7 @@ router.get(
   }
 );
 
-// GET /groups/:id/balances - Calculate net balance per member
+// GET /groups/:id/balances - Calculate net balance per member (Public Read)
 router.get(
   '/:id/balances',
   validateGroupId,
@@ -149,7 +155,7 @@ router.get(
   }
 );
 
-// GET /groups/:id/settlements/suggested - Get simplified debt list
+// GET /groups/:id/settlements/suggested - Get simplified debt list (Public Read)
 router.get(
   '/:id/settlements/suggested',
   validateGroupId,
@@ -175,9 +181,11 @@ router.get(
   }
 );
 
-// POST /groups/:id/settlements - Record an actual repayment
+// POST /groups/:id/settlements - Record an actual repayment (requires Auth & Rate Limiting)
 router.post(
   '/:id/settlements',
+  writeRateLimiter,
+  requireApiKey,
   validateGroupId,
   validateCreateSettlement,
   async (req: Request, res: Response, next: NextFunction) => {

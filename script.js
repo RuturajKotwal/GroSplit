@@ -1,6 +1,7 @@
 // const API_BASE = 'http://localhost:5000/groups';
 
 const API_BASE = 'https://grosplit.onrender.com/groups';
+const API_KEY = 'grosplit-dev-secret-key';
 
 let currentGroup = null;
 
@@ -28,7 +29,10 @@ async function initGroup() {
     try {
       const res = await fetch(API_BASE, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': API_KEY,
+        },
         body: JSON.stringify({
           name: 'Apartment 4B',
           members: ['Alice', 'Bob', 'Charlie', 'Dave'],
@@ -53,7 +57,8 @@ async function initGroup() {
 function renderGroupUI() {
   document.getElementById('groupNameDisplay').textContent = currentGroup.name;
   document.getElementById('groupIdDisplay').textContent = currentGroup._id;
-  document.getElementById('membersDisplay').textContent = currentGroup.members.join(', ');
+  document.getElementById('membersDisplay').textContent =
+    currentGroup.members.join(', ');
 
   // Populate Payer Select dropdown
   const payerSelect = document.getElementById('payerSelect');
@@ -71,7 +76,9 @@ function renderGroupUI() {
   });
 
   // Populate Participant Checkboxes
-  const checkboxContainer = document.getElementById('participantsCheckboxContainer');
+  const checkboxContainer = document.getElementById(
+    'participantsCheckboxContainer'
+  );
   checkboxContainer.innerHTML = '';
   currentGroup.members.forEach((member) => {
     checkboxContainer.innerHTML += `
@@ -96,8 +103,16 @@ async function addExpense() {
     document.querySelectorAll('.participant:checked')
   ).map((cb) => cb.value);
 
-  if (!paidBy || !description || isNaN(priceEuro) || priceEuro <= 0 || participants.length === 0) {
-    alert('Please select a payer, enter a description, enter a valid positive amount, and select at least one participant.');
+  if (
+    !paidBy ||
+    !description ||
+    isNaN(priceEuro) ||
+    priceEuro <= 0 ||
+    participants.length === 0
+  ) {
+    alert(
+      'Please select a payer, enter a description, enter a valid positive amount, and select at least one participant.'
+    );
     return;
   }
 
@@ -106,7 +121,10 @@ async function addExpense() {
   try {
     const res = await fetch(`${API_BASE}/${currentGroup._id}/expenses`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+      },
       body: JSON.stringify({
         paidBy,
         amount: amountCents,
@@ -125,7 +143,9 @@ async function addExpense() {
     document.getElementById('itemName').value = '';
     document.getElementById('itemPrice').value = '';
     document.getElementById('payerSelect').value = '';
-    document.querySelectorAll('.participant').forEach((cb) => (cb.checked = false));
+    document
+      .querySelectorAll('.participant')
+      .forEach((cb) => (cb.checked = false));
     document.getElementById('selectAll').checked = false;
 
     await displayItems();
@@ -206,13 +226,16 @@ async function calculateSplit() {
     }
 
     // 2. Fetch Suggested Settlements
-    const setRes = await fetch(`${API_BASE}/${currentGroup._id}/settlements/suggested`);
+    const setRes = await fetch(
+      `${API_BASE}/${currentGroup._id}/settlements/suggested`
+    );
     if (setRes.ok) {
       const { settlements } = await setRes.json();
       suggestedList.innerHTML = '';
 
       if (settlements.length === 0) {
-        suggestedList.innerHTML = '<li>All debts are settled! No repayments needed.</li>';
+        suggestedList.innerHTML =
+          '<li>All debts are settled! No repayments needed.</li>';
         return;
       }
 
@@ -238,10 +261,14 @@ async function recordSettlement() {
 
   const from = document.getElementById('settlementFrom').value;
   const to = document.getElementById('settlementTo').value;
-  const priceEuro = parseFloat(document.getElementById('settlementAmount').value);
+  const priceEuro = parseFloat(
+    document.getElementById('settlementAmount').value
+  );
 
   if (!from || !to || isNaN(priceEuro) || priceEuro <= 0) {
-    alert('Please select both payer and recipient, and enter a valid positive amount.');
+    alert(
+      'Please select both payer and recipient, and enter a valid positive amount.'
+    );
     return;
   }
 
@@ -255,7 +282,10 @@ async function recordSettlement() {
   try {
     const res = await fetch(`${API_BASE}/${currentGroup._id}/settlements`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': API_KEY,
+      },
       body: JSON.stringify({
         from,
         to,

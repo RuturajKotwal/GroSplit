@@ -5,6 +5,7 @@ import app from '../../src/app';
 import Group from '../../src/models/Group';
 import Expense from '../../src/models/Expense';
 import Settlement from '../../src/models/Settlement';
+import { DEFAULT_API_KEY } from '../../src/middleware/auth';
 
 let mongoServer: MongoMemoryServer;
 
@@ -26,10 +27,38 @@ afterEach(async () => {
 });
 
 describe('Groups API Endpoints', () => {
-  describe('POST /groups', () => {
-    it('should create a new group with valid inputs', async () => {
+  describe('Authentication on Write Endpoints', () => {
+    it('should reject unauthenticated POST /groups with 401', async () => {
       const res = await request(app)
         .post('/groups')
+        .send({
+          name: 'Apartment 4B',
+          members: ['Alice', 'Bob'],
+        });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.error).toContain('Unauthorized');
+    });
+
+    it('should reject invalid API key with 401', async () => {
+      const res = await request(app)
+        .post('/groups')
+        .set('x-api-key', 'wrong-key')
+        .send({
+          name: 'Apartment 4B',
+          members: ['Alice', 'Bob'],
+        });
+
+      expect(res.statusCode).toBe(401);
+      expect(res.body.error).toBe('Unauthorized: Invalid API key');
+    });
+  });
+
+  describe('POST /groups', () => {
+    it('should create a new group with valid inputs and API key', async () => {
+      const res = await request(app)
+        .post('/groups')
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           name: 'Ski Trip',
           members: ['Alice', 'Bob', 'Charlie'],
@@ -44,6 +73,7 @@ describe('Groups API Endpoints', () => {
     it('should return 400 if name is missing', async () => {
       const res = await request(app)
         .post('/groups')
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           members: ['Alice', 'Bob'],
         });
@@ -53,10 +83,13 @@ describe('Groups API Endpoints', () => {
     });
 
     it('should return 400 if members array is empty', async () => {
-      const res = await request(app).post('/groups').send({
-        name: 'Empty Group',
-        members: [],
-      });
+      const res = await request(app)
+        .post('/groups')
+        .set('x-api-key', DEFAULT_API_KEY)
+        .send({
+          name: 'Empty Group',
+          members: [],
+        });
 
       expect(res.statusCode).toBe(400);
       expect(res.body.error).toBe('Group must have at least one member');
@@ -64,7 +97,7 @@ describe('Groups API Endpoints', () => {
   });
 
   describe('GET /groups/:id', () => {
-    it('should fetch an existing group by ID', async () => {
+    it('should fetch an existing group by ID without auth header (Public Read)', async () => {
       const group = await Group.create({
         name: 'Road Trip',
         members: ['Alice', 'Bob'],
@@ -103,9 +136,10 @@ describe('Groups API Endpoints', () => {
       });
     });
 
-    it('should create an expense for a valid group', async () => {
+    it('should create an expense for a valid group with API key', async () => {
       const res = await request(app)
         .post(`/groups/${groupInstance._id}/expenses`)
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           paidBy: 'Alice',
           amount: 3000,
@@ -123,6 +157,7 @@ describe('Groups API Endpoints', () => {
     it('should return 400 if payer is not a group member', async () => {
       const res = await request(app)
         .post(`/groups/${groupInstance._id}/expenses`)
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           paidBy: 'Dave',
           amount: 2000,
@@ -138,6 +173,7 @@ describe('Groups API Endpoints', () => {
     it('should return 400 if amount is non-integer or <= 0', async () => {
       const floatRes = await request(app)
         .post(`/groups/${groupInstance._id}/expenses`)
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           paidBy: 'Alice',
           amount: 15.75,
@@ -148,6 +184,7 @@ describe('Groups API Endpoints', () => {
 
       const negativeRes = await request(app)
         .post(`/groups/${groupInstance._id}/expenses`)
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           paidBy: 'Alice',
           amount: -500,
@@ -159,11 +196,14 @@ describe('Groups API Endpoints', () => {
 
     it('should return 404 if group does not exist', async () => {
       const fakeId = new mongoose.Types.ObjectId();
-      const res = await request(app).post(`/groups/${fakeId}/expenses`).send({
-        paidBy: 'Alice',
-        amount: 1000,
-        description: 'Orphan Expense',
-      });
+      const res = await request(app)
+        .post(`/groups/${fakeId}/expenses`)
+        .set('x-api-key', DEFAULT_API_KEY)
+        .send({
+          paidBy: 'Alice',
+          amount: 1000,
+          description: 'Orphan Expense',
+        });
 
       expect(res.statusCode).toBe(404);
       expect(res.body.error).toBe('Group not found');
@@ -171,7 +211,7 @@ describe('Groups API Endpoints', () => {
   });
 
   describe('GET /groups/:id/expenses', () => {
-    it('should list all expenses for a group', async () => {
+    it('should list all expenses for a group (Public Read)', async () => {
       const group = await Group.create({
         name: 'Weekend Getaway',
         members: ['Alice', 'Bob'],
@@ -209,7 +249,7 @@ describe('Groups API Endpoints', () => {
   });
 
   describe('GET /groups/:id/balances', () => {
-    it('should return calculated net balances for all group members', async () => {
+    it('should return calculated net balances for all group members (Public Read)', async () => {
       const group = await Group.create({
         name: 'Shared Flat',
         members: ['Alice', 'Bob', 'Charlie'],
@@ -244,7 +284,7 @@ describe('Groups API Endpoints', () => {
   });
 
   describe('GET /groups/:id/settlements/suggested', () => {
-    it('should return simplified debt transactions for group', async () => {
+    it('should return simplified debt transactions for group (Public Read)', async () => {
       const group = await Group.create({
         name: 'Vacation',
         members: ['Alice', 'Bob', 'Charlie'],
@@ -291,7 +331,7 @@ describe('Groups API Endpoints', () => {
       });
     });
 
-    it('should record a settlement and update balances accordingly', async () => {
+    it('should record a settlement with API key and update balances', async () => {
       await Expense.create({
         groupId: groupInstance._id,
         paidBy: 'Alice',
@@ -302,6 +342,7 @@ describe('Groups API Endpoints', () => {
 
       const setRes = await request(app)
         .post(`/groups/${groupInstance._id}/settlements`)
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           from: 'Bob',
           to: 'Alice',
@@ -327,6 +368,7 @@ describe('Groups API Endpoints', () => {
     it('should return 400 if from and to are the same person', async () => {
       const res = await request(app)
         .post(`/groups/${groupInstance._id}/settlements`)
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           from: 'Bob',
           to: 'Bob',
@@ -340,6 +382,7 @@ describe('Groups API Endpoints', () => {
     it('should return 400 if member in settlement is not in group', async () => {
       const res = await request(app)
         .post(`/groups/${groupInstance._id}/settlements`)
+        .set('x-api-key', DEFAULT_API_KEY)
         .send({
           from: 'Dave',
           to: 'Alice',

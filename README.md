@@ -12,20 +12,22 @@ GroSplit is a Node.js / Express backend service for tracking multi-bill group ex
 
 ## Technical Overview
 
-GroSplit evolved from a single-bill static in-browser calculation script into a multi-tenant REST API with cloud database persistence, Docker containerization, unit/integration testing, and automated CI.
+GroSplit evolved from a single-bill static in-browser calculation script into a multi-tenant TypeScript REST API with cloud database persistence, Docker containerization, unit/integration testing, and automated CI.
 
 Key technical specifications:
 - **Integer Cents Precision**: All monetary values are handled in integer cents to eliminate floating-point rounding errors.
 - **Deterministic Cent Allocation**: Remainder cents from non-even splits are assigned deterministically (alphabetically) to guarantee zero-sum group balance invariants.
 - **Minimal Debt Graph Reduction**: Implements a greedy debt simplification algorithm to reduce $N$-person settlement transactions to at most $N-1$.
+- **Production Hardening**: API key authentication and IP rate limiting on write endpoints.
 
 ---
 
 ## Architecture & Tech Stack
 
-- **Runtime & Server**: Node.js 20, Express
+- **Runtime & Server**: Node.js 20, TypeScript, Express
 - **Database & ODM**: MongoDB, Mongoose (MongoDB Atlas)
-- **Testing**: Jest, Supertest, `mongodb-memory-server`
+- **Security & Reliability**: `express-rate-limit`, Header-based API key auth
+- **Testing**: Jest, `ts-jest`, Supertest, `mongodb-memory-server`
 - **Containerization**: Docker, Docker Compose
 - **CI/CD**: GitHub Actions
 - **Client**: Vanilla HTML5, CSS3, JavaScript (Fetch API)
@@ -59,8 +61,12 @@ npm install
 # Copy environment template
 cp .env.example .env
 
-# Run development server
+# Run development server with ts-node
 npm run dev
+
+# Or compile and run production bundle
+npm run build
+npm start
 ```
 
 ---
@@ -74,6 +80,29 @@ Copy `.env.example` to `.env` to configure server properties:
 | `PORT` | `5000` | HTTP server port |
 | `MONGODB_URI` | `mongodb://localhost:27017/grosplit` | Primary MongoDB connection URI |
 | `MONGO_URI` | `mongodb://localhost:27017/grosplit` | Secondary fallback MongoDB connection URI |
+| `API_KEY` | `grosplit-dev-secret-key` | Secret key required for write operations (`POST`) |
+
+---
+
+## Authentication & Rate Limiting
+
+### Authentication
+- **Read Operations (`GET`)**: Publicly accessible without credentials to enable frictionless viewing of balances and debt settlements.
+- **Write Operations (`POST`)**: Protected via API key authentication. Clients must provide the key via either:
+  - Header: `x-api-key: <API_KEY>`
+  - Header: `Authorization: Bearer <API_KEY>`
+- Unauthenticated or invalid requests return `401 Unauthorized`:
+  ```json
+  { "error": "Unauthorized: Missing API key in x-api-key or Authorization header" }
+  ```
+
+### Rate Limiting
+- Write endpoints are guarded by `express-rate-limit` to prevent denial-of-service and automated spam.
+- Returns standard `RateLimit-*` response headers.
+- Requests exceeding thresholds return `429 Too Many Requests`:
+  ```json
+  { "error": "Too many requests, please try again later." }
+  ```
 
 ---
 
@@ -81,21 +110,22 @@ Copy `.env.example` to `.env` to configure server properties:
 
 All request and response bodies use JSON. Monetary amounts are integer cents (e.g., `2000` = €20.00).
 
-| Method | Endpoint | Description | Status |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/health` | Server health & database connection status | `200` |
-| `POST` | `/groups` | Create group `{ name, members }` | `201` / `400` |
-| `GET` | `/groups/:id` | Retrieve group details | `200` / `404` |
-| `POST` | `/groups/:id/expenses` | Record expense `{ paidBy, amount, description, splitBetween? }` | `201` / `400` |
-| `GET` | `/groups/:id/expenses` | List group expenses | `200` / `404` |
-| `GET` | `/groups/:id/balances` | Calculate net balances per member | `200` / `404` |
-| `GET` | `/groups/:id/settlements/suggested` | Calculate minimal debt simplification list | `200` / `404` |
-| `POST` | `/groups/:id/settlements` | Record repayment transaction `{ from, to, amount }` | `201` / `400` |
+| Method | Endpoint | Auth Required | Description | Status Codes |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/health` | No | Server health & database connection status | `200` |
+| `POST` | `/groups` | **Yes** | Create group `{ name, members }` | `201` / `400` / `401` / `429` |
+| `GET` | `/groups/:id` | No | Retrieve group details | `200` / `404` |
+| `POST` | `/groups/:id/expenses` | **Yes** | Record expense `{ paidBy, amount, description, splitBetween? }` | `201` / `400` / `401` / `429` |
+| `GET` | `/groups/:id/expenses` | No | List group expenses | `200` / `404` |
+| `GET` | `/groups/:id/balances` | No | Calculate net balances per member | `200` / `404` |
+| `GET` | `/groups/:id/settlements/suggested` | No | Calculate minimal debt simplification list | `200` / `404` |
+| `POST` | `/groups/:id/settlements` | **Yes** | Record repayment transaction `{ from, to, amount }` | `201` / `400` / `401` / `429` |
 
 ### Payload Examples
 
 #### Create Group (`POST /groups`)
 ```json
+// Headers: { "x-api-key": "grosplit-dev-secret-key" }
 // Request
 {
   "name": "Apartment 4B",
@@ -113,6 +143,7 @@ All request and response bodies use JSON. Monetary amounts are integer cents (e.
 
 #### Add Expense (`POST /groups/:id/expenses`)
 ```json
+// Headers: { "x-api-key": "grosplit-dev-secret-key" }
 // Request
 {
   "paidBy": "Alice",
@@ -151,7 +182,7 @@ All request and response bodies use JSON. Monetary amounts are integer cents (e.
 
 ## Core Algorithms
 
-Core calculations are isolated as pure functions in [`src/services/balanceService.js`](file:///c:/Users/admin/OneDrive/Desktop/git/GroSplit/src/services/balanceService.js).
+Core calculations are isolated as pure functions in [`src/services/balanceService.ts`](file:///c:/Users/admin/OneDrive/Desktop/git/GroSplit/src/services/balanceService.ts).
 
 ### 1. Net Balance Calculation (`calculateBalances`)
 - **Integer Cents Math**: Prevents floating-point precision loss by working entirely in integer cents.
@@ -177,15 +208,16 @@ npm test
 # Generate code coverage report
 npm run test:coverage
 
+# Run TypeScript typecheck
+npm run typecheck
+
 # Run ESLint check
 npm run lint
 ```
 
 ### Coverage Statistics
-- **Statement Coverage**: 94.53%
-- **Line Coverage**: 95.25%
-- **Function Coverage**: 100%
-- **Test Count**: 61 passing tests across 5 test suites
+- **Test Count**: 68 passing tests across 7 test suites
+- **Coverage**: >90% across statements, lines, and branches
 
 ### Continuous Integration
-GitHub Actions runs `.github/workflows/ci.yml` on push and pull requests targeting `master` and `main` branches, verifying linting, test execution, coverage, and Docker build steps.
+GitHub Actions runs `.github/workflows/ci.yml` on push and pull requests targeting `master` and `main` branches, verifying linting, typechecking, test execution, coverage, and Docker build steps.
