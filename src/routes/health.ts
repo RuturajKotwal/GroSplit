@@ -3,6 +3,21 @@ import mongoose from 'mongoose';
 
 const router = express.Router();
 
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Health and database connectivity status
+ *     tags:
+ *       - System
+ *     responses:
+ *       200:
+ *         description: Server is operational and reports MongoDB connectivity status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/HealthResponse'
+ */
 router.get('/', async (_req: Request, res: Response) => {
   let isDbConnected = mongoose.connection.readyState === 1;
   let dbError: string | null = null;

@@ -6,6 +6,7 @@ GroSplit is a Node.js / Express backend service for tracking multi-bill group ex
 
 - **Frontend Client**: [https://ruturajkotwal.github.io/GroSplit/](https://ruturajkotwal.github.io/GroSplit/)
 - **Production API**: [https://grosplit.onrender.com](https://grosplit.onrender.com)
+- **Interactive API Documentation (Swagger)**: [https://grosplit.onrender.com/api-docs](https://grosplit.onrender.com/api-docs)
 - **Health Check**: [https://grosplit.onrender.com/health](https://grosplit.onrender.com/health)
 
 ---

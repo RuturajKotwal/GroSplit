@@ -1,5 +1,7 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import swaggerUi from 'swagger-ui-express';
+import { swaggerSpec } from './config/swagger';
 import healthRouter from './routes/health';
 import groupsRouter from './routes/groups';
 
@@ -22,6 +24,13 @@ app.use((req: Request, res: Response, next: NextFunction) => {
     );
   });
   next();
+});
+
+// Swagger API Documentation
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+app.get('/api-docs.json', (_req: Request, res: Response) => {
+  res.setHeader('Content-Type', 'application/json');
+  res.send(swaggerSpec);
 });
 
 app.use('/health', healthRouter);

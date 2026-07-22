@@ -37,7 +37,40 @@ router.use(async (_req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-// POST /groups - Create a new group (requires Auth & Rate Limiting)
+/**
+ * @openapi
+ * /groups:
+ *   post:
+ *     summary: Create a new expense group
+ *     tags:
+ *       - Groups
+ *     security:
+ *       - ApiKeyAuth: []
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/GroupInput'
+ *     responses:
+ *       201:
+ *         description: Group created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Group'
+ *       400:
+ *         description: Invalid input payload
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Missing or invalid API key
+ *       429:
+ *         description: Rate limit exceeded
+ */
 router.post(
   '/',
   writeRateLimiter,
@@ -57,7 +90,32 @@ router.post(
   }
 );
 
-// GET /groups/:id - Fetch group details (Public Read)
+/**
+ * @openapi
+ * /groups/{id}:
+ *   get:
+ *     summary: Fetch group details by ID
+ *     tags:
+ *       - Groups
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 24-character hex MongoDB ObjectId
+ *     responses:
+ *       200:
+ *         description: Group details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Group'
+ *       400:
+ *         description: Invalid ObjectId format
+ *       404:
+ *         description: Group not found
+ */
 router.get(
   '/:id',
   validateGroupId,
@@ -74,7 +132,45 @@ router.get(
   }
 );
 
-// POST /groups/:id/expenses - Add an expense to a group (requires Auth & Rate Limiting)
+/**
+ * @openapi
+ * /groups/{id}/expenses:
+ *   post:
+ *     summary: Record a new expense for a group
+ *     tags:
+ *       - Expenses
+ *     security:
+ *       - ApiKeyAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ObjectId
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/ExpenseInput'
+ *     responses:
+ *       201:
+ *         description: Expense recorded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Expense'
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Group not found
+ *       429:
+ *         description: Rate limit exceeded
+ */
 router.post(
   '/:id/expenses',
   writeRateLimiter,
@@ -112,7 +208,32 @@ router.post(
   }
 );
 
-// GET /groups/:id/expenses - List all expenses for a group (Public Read)
+/**
+ * @openapi
+ * /groups/{id}/expenses:
+ *   get:
+ *     summary: List all expenses recorded for a group
+ *     tags:
+ *       - Expenses
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ObjectId
+ *     responses:
+ *       200:
+ *         description: List of expenses
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 $ref: '#/components/schemas/Expense'
+ *       404:
+ *         description: Group not found
+ */
 router.get(
   '/:id/expenses',
   validateGroupId,
@@ -133,7 +254,30 @@ router.get(
   }
 );
 
-// GET /groups/:id/balances - Calculate net balance per member (Public Read)
+/**
+ * @openapi
+ * /groups/{id}/balances:
+ *   get:
+ *     summary: Calculate exact zero-sum net balance for each group member
+ *     tags:
+ *       - Balances
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ObjectId
+ *     responses:
+ *       200:
+ *         description: Calculated net balances in integer cents
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/BalanceResponse'
+ *       404:
+ *         description: Group not found
+ */
 router.get(
   '/:id/balances',
   validateGroupId,
@@ -155,7 +299,30 @@ router.get(
   }
 );
 
-// GET /groups/:id/settlements/suggested - Get simplified debt list (Public Read)
+/**
+ * @openapi
+ * /groups/{id}/settlements/suggested:
+ *   get:
+ *     summary: Get minimal debt simplification transfers (greedy algorithm)
+ *     tags:
+ *       - Settlements
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ObjectId
+ *     responses:
+ *       200:
+ *         description: Minimal list of suggested debt settlement transfers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/SuggestedSettlementsResponse'
+ *       404:
+ *         description: Group not found
+ */
 router.get(
   '/:id/settlements/suggested',
   validateGroupId,
@@ -181,7 +348,45 @@ router.get(
   }
 );
 
-// POST /groups/:id/settlements - Record an actual repayment (requires Auth & Rate Limiting)
+/**
+ * @openapi
+ * /groups/{id}/settlements:
+ *   post:
+ *     summary: Record an actual repayment settlement between two members
+ *     tags:
+ *       - Settlements
+ *     security:
+ *       - ApiKeyAuth: []
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Group ObjectId
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/SettlementInput'
+ *     responses:
+ *       201:
+ *         description: Settlement recorded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Settlement'
+ *       400:
+ *         description: Validation error
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Group not found
+ *       429:
+ *         description: Rate limit exceeded
+ */
 router.post(
   '/:id/settlements',
   writeRateLimiter,
